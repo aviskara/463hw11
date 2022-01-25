@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     std::cout << "URL: " << argv[1] << "\n";
 
     std::string newurl = argv[1];
-    newurl = "https://yahoo.com/";
+    newurl = "http://irl.cse.tamu.edu/courses/463/hw1p1.pdf";
     DecompURL newnew = DecompURL(newurl);
     newnew.connectURL(newnew);
     

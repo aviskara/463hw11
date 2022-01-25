@@ -23,6 +23,22 @@ DecompURL::DecompURL(std::string _url)
         *cursor = '\0';
     }
 
+    // Check if the request is within the valid length
+    cursor = url;
+    cursor = strchr(cursor, '/');
+    int reqlen = (strlen(url) - (cursor - url));
+    if (reqlen > MAX_REQUEST_LEN) {
+        printf("request must be shorter than %d\n", MAX_REQUEST_LEN);
+        exit(-1);
+    }
+
+    // Check if host is within valid length
+    int hostlen = (cursor - url);
+    if (hostlen > MAX_HOST_LEN) {
+        printf("host must be shorter than %d\n", MAX_HOST_LEN);
+        exit(-1);
+    }
+
     // Search if the query and set the variable
     bool isQuery = false;
     cursor = url;
