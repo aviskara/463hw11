@@ -12,11 +12,12 @@ int main(int argc, char *argv[]) {
         printf("ERROR: There is more/less than one argument in the command line \nArgument count: %d", argc);
         exit(-1);
     }
-    std::cout << argv[1] << "\n\n";
+    std::cout << "URL: " << argv[1] << "\n";
 
     std::string newurl = argv[1];
+    newurl = "https://yahoo.com/";
     DecompURL newnew = DecompURL(newurl);
-
+    newnew.connectURL(newnew);
     
 
     

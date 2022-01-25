@@ -8,6 +8,7 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+#pragma comment(lib, "Ws2_32.lib")
 #pragma once
 
 #include <iostream>
