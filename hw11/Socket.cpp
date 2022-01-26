@@ -1,3 +1,10 @@
+/*
+* Name: Ricky Arellano
+* UIN: 728001575
+* Class: CSCE 463
+* Section: 500
+* Semister Spring 22
+*/
 #include "pch.h"
 #include "Socket.h"
 
@@ -25,6 +32,7 @@ bool Socket::Write(DecompURL _url)
     char* sendBuf = new char[reqsize + 1];
     std::copy(req.begin(), req.end(), sendBuf);
     sendBuf[reqsize] = '\0';
+    //printf("\n%s", sendBuf);
 
     if (send(sock, sendBuf, reqsize, 0) == SOCKET_ERROR) {
         printf("failed with: %d\n", WSAGetLastError());

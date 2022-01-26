@@ -1,9 +1,18 @@
+/*
+* Name: Ricky Arellano
+* UIN: 728001575
+* Class: CSCE 463
+* Section: 500
+* Semister Spring 22
+*/
+
 #include "pch.h"
 #include "DecompURL.h"
 #include "Socket.h"
 
 DecompURL::DecompURL(std::string _url)
 {
+    printf("URL: %s\n", _url.c_str());
     printf("\t  Parsing URL...  ");
     port = "";
     char scheme[] = "http:";
@@ -32,12 +41,6 @@ DecompURL::DecompURL(std::string _url)
         exit(-1);
     }
 
-    // Check if host is within valid length
-    int hostlen = (cursor - url);
-    if (hostlen > MAX_HOST_LEN) {
-        printf("host must be shorter than %d\n", MAX_HOST_LEN);
-        exit(-1);
-    }
 
     // Search if the query and set the variable
     bool isQuery = false;
@@ -171,7 +174,7 @@ void DecompURL::connectURL(DecompURL _url)
     t = clock();
     
     server.sin_family = AF_INET;
-    server.sin_port = htons(80);
+    server.sin_port = htons(atoi(_url.port.c_str()));
 
     if (connect(newsock.sock, (struct sockaddr*)&server, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
         printf("failed with: %d\n", WSAGetLastError());

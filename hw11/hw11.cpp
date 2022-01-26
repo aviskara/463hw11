@@ -1,5 +1,10 @@
-// hw11.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+/*
+* Name: Ricky Arellano
+* UIN: 728001575
+* Class: CSCE 463
+* Section: 500
+* Semister Spring 22
+*/
 
 #include "pch.h"
 #include "DecompURL.h"
@@ -12,10 +17,10 @@ int main(int argc, char *argv[]) {
         printf("ERROR: There is more/less than one argument in the command line \nArgument count: %d", argc);
         exit(-1);
     }
-    std::cout << "URL: " << argv[1] << "\n";
+    
 
     std::string newurl = argv[1];
-    newurl = "http://irl.cse.tamu.edu/courses/463/hw1p1.pdf";
+    //newurl = "http://relay.tamu.edu:465/index.html";
     DecompURL newnew = DecompURL(newurl);
     newnew.connectURL(newnew);
     
