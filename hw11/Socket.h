@@ -16,7 +16,6 @@ public:
 	char* buf;
 	int allocatedSize;
 	int curpos;
-	size_t size;
 
 	Socket();
 

@@ -15,7 +15,6 @@ Socket::Socket() {
     buf = new char[INITIAL_BUF_SIZE];
     allocatedSize = INITIAL_BUF_SIZE;
     curpos = 0;
-    size = 4096;
 }
 
 
@@ -76,15 +75,15 @@ bool Socket::Read(void)
             }
             // return as all info is sent
             if (bytes == 0) {
-                buf[curpos + 1] = '\0';
+                buf[curpos + 1] = '\0'; 
                 printf("done in %.0f ms with %d bytes\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC, curpos);
                 return true;
             }
             curpos += bytes;
             if (allocatedSize - curpos < 1024) {
-                char* tmp = new char[size * 2];
-                memcpy(tmp, buf, size);
-                size *= 2;
+                char* tmp = new char[static_cast<unsigned __int64>(allocatedSize) * 2];
+                memcpy(tmp, buf, allocatedSize);
+                allocatedSize *= 2;
                 delete buf;
                 buf = tmp;
             }

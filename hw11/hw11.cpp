@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     
 
     std::string newurl = argv[1];
-    //newurl = "http://relay.tamu.edu:465/index.html";
+    newurl = "http://facebook.com:443/?addrbook.php";
     DecompURL newnew = DecompURL(newurl);
     newnew.connectURL(newnew);
     

@@ -89,11 +89,11 @@ DecompURL::DecompURL(std::string _url)
         *cursor = '\0';
 
         //display error if there is only : or port is 0
-        if (portsize == 1) {
+        if (portsize == 0) {
             printf("failed with invalid port\n");
             exit(-1);
         }
-        if (charport[1] == '0') {
+        else if (charport[0] == '0') {
             printf("failed with invalid port\n");
             exit(-1);
         }
@@ -103,6 +103,7 @@ DecompURL::DecompURL(std::string _url)
         portsize = 2;
         memcpy(charport, defport, 3);
     }
+
     cursor = charport + portsize;
     *cursor = '\0';
 
@@ -187,12 +188,21 @@ void DecompURL::connectURL(DecompURL _url)
     if (newsock.Write(_url)) 
     {
         if (newsock.Read()) 
-        {
+        {   
             char* response = newsock.buf;
             closesocket(newsock.sock);
 
+            char validResponse[] = "HTTP";
+
             // get to the status and verify
             printf("\t  Verifying header... ");
+
+            // check if response is HTTP reply
+            if (memcmp(validResponse, response, 4) != 0) {
+                printf("failed with non-HTTP header\n");
+                return;
+            }
+
             char* cursor = response + 9;
             char status[4] = { '\0' };
             memcpy(status, cursor, 4);
