@@ -8,7 +8,7 @@
 #include "pch.h"
 #include "Socket.h"
 
-const int INITIAL_BUF_SIZE = 4096;
+const int INITIAL_BUF_SIZE = 1024;
 
 Socket::Socket() {
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -18,14 +18,19 @@ Socket::Socket() {
 }
 
 
-bool Socket::Write(DecompURL _url)
+bool Socket::Write(DecompURL _url, bool _robots)
 {
     printf("\t  Loading... ");
+    std::string req = "";
 
     // generate http request
-    std::string req = "GET " + _url.request + " HTTP/1.0 \r\nUser-agent: hwCrawler/1.1\r\nHost: " + _url.host + "\r\nConnection: close\r\n\r\n";
+    if (_robots) {
+        req = "HEAD /robots.txt HTTP/1.0 \r\nUser-agent: hwCrawler/1.2\r\nHost: " + _url.host + "\r\nConnection: close\r\n\r\n";
+    }
+    else {
+         req = "GET " + _url.request + " HTTP/1.0 \r\nUser-agent: hwCrawler/1.2\r\nHost: " + _url.host + "\r\nConnection: close\r\n\r\n";
+    }
     //char* tmp = req.c_str();
-    //std::cout << "\n" << req << "\n";
 
     size_t reqsize = req.length();
     char* sendBuf = new char[reqsize + 1];
@@ -44,7 +49,7 @@ bool Socket::Write(DecompURL _url)
 }
 
 
-bool Socket::Read(void)
+bool Socket::Read(int maxSize)
 {
     // set max time before listen timeout
     timeval timeout;
@@ -53,17 +58,17 @@ bool Socket::Read(void)
     int ret;
 
     fd_set fd;
-    // initialize fd
-    FD_ZERO(&fd);
-    // set fd to socket
-    FD_SET(sock, &fd);
+    
 
     clock_t t = clock();
 
 
     while (true)
     {
-        
+        // initialize fd
+        FD_ZERO(&fd);
+        // set fd to socket
+        FD_SET(sock, &fd);
         // check if there is something to read
         if ((ret = select(0, &fd, 0, 0, &timeout)) > 0)
         {
@@ -77,9 +82,25 @@ bool Socket::Read(void)
             if (bytes == 0) {
                 buf[curpos + 1] = '\0'; 
                 printf("done in %.0f ms with %d bytes\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC, curpos);
+
+                // resize if buffer is greater than 32kb
+                if (allocatedSize > (32 * 1024)) {
+                    char* tmp = new char[4096];
+                    allocatedSize = 4096;
+                    delete buf;
+                    buf = tmp;
+                }
                 return true;
             }
             curpos += bytes;
+
+            // return if reading more than supposed to
+            if (curpos > maxSize) {
+                printf("failed with exceeding max\n");
+                return false;
+            }
+
+            // resize if buffer is nto large enough
             if (allocatedSize - curpos < 1024) {
                 char* tmp = new char[static_cast<unsigned __int64>(allocatedSize) * 2];
                 memcpy(tmp, buf, allocatedSize);
@@ -90,11 +111,11 @@ bool Socket::Read(void)
         }
         else if (ret == 0) {
             printf("failed with timeout\n");
-            exit(-1);
+            return false;
         }
         else {
             printf("failed with %d\n", WSAGetLastError());
-            exit(-1);
+            return false;
         }
     }
     return false;

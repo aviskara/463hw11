@@ -7,7 +7,6 @@
 */
 
 #pragma once
-
 #include "pch.h"
 
 class DecompURL
@@ -20,11 +19,15 @@ public:
 	std::string query;
 	std::string request;
 
-	DecompURL(std::string _url);
+	std::unordered_set<std::string> uniqueURL;
+	std::unordered_set<std::string> uniqueIP;
+
+	DecompURL();
 	~DecompURL();
 
-	std::string PrintURL();
-	void connectURL(DecompURL _url);
+	int fillURL(std::string _url);
+	bool connectURL(DecompURL _url, bool printHeader, char statusChar, bool _printText, int maxSize); 
+	bool hostCheck(std::string _url);
 
 };
 

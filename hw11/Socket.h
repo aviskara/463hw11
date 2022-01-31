@@ -19,6 +19,6 @@ public:
 
 	Socket();
 
-	bool Write(DecompURL _url);
-	bool Read(void);
+	bool Write(DecompURL _url, bool _robots);
+	bool Read(int maxSize);
 };

@@ -14,7 +14,10 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <string.h>
+#include <sstream>
+#include <unordered_set>
 #include <stdio.h>
 #include <Windows.h>
 
