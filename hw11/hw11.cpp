@@ -303,6 +303,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
             }
             char* response = newsock.buf;
             closesocket(newsock.sock);
+            
 
             char validResponse[] = "HTTP";
             char headerend[] = "\r\n\r\n";
@@ -331,9 +332,12 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 if (status[0] == '2') {
                     WaitForSingleObject(p->counterMutex, INFINITE);
                     p->respCodes[0] += 1;
-                    if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
-                        p->tamuCount += 1;
+                    if (_url.host.size() >= 8) {
+                        if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
+                            p->tamuCount += 1;
+                        }
                     }
+                    
                     ReleaseMutex(p->counterMutex);
                 }
                 else if (status[0] == '3') {
@@ -363,6 +367,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 int nLinks;
                 char* linkBuffer = parser->Parse(response, (int)strlen(response), const_cast<char*>(_url.URL.c_str()), (int)strlen(_url.URL.c_str()), &nLinks);
 
+                delete parser;
                 if (nLinks < 0)
                     nLinks = 0;
 
@@ -385,14 +390,17 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 printf("\n------------------------------------------\n%s\n\n", response);
             }
             */
+            return true;
         }
         else
         {
+            delete[] newsock.buf;
             return false;
         }
     }
     else
-    {
+    {   
+        delete[] newsock.buf;
         return false;
     }
     closesocket(newsock.sock);

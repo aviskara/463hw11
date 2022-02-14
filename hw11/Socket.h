@@ -19,6 +19,8 @@ public:
 
 	Socket();
 
+	~Socket();
+
 	bool Write(bool _robots, std::string _host, std::string _request);
 	bool Read(int maxSize);
 
