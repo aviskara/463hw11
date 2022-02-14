@@ -17,7 +17,10 @@ int printTime = 2;
 struct Parameters {
     HANDLE queueMutex;
     HANDLE counterMutex;
+    HANDLE listMutex;
+    HANDLE list2Mutex;
     HANDLE timerMutex;
+    HANDLE timer2Mutex;
     HANDLE finished;
     HANDLE evenetQuit;
 
@@ -63,7 +66,6 @@ struct Parameters {
 bool DecompURL::fillThreadURL(LPVOID _param, std::string _url)
 {
     Parameters* p = (Parameters*)_param;
-    clock_t t = clock();
 
     //printf("URL: %s\n", _url.c_str());
     //printf("\t  Parsing URL...  ");
@@ -177,9 +179,6 @@ bool DecompURL::fillThreadURL(LPVOID _param, std::string _url)
     path = charpath;
     request = path + query;
 
-    WaitForSingleObject(p->timerMutex, INFINITE);
-    p->extractTime += (double)((clock() - t) / CLOCKS_PER_SEC);
-    ReleaseMutex(p->timerMutex);
 
     return true;
 }
@@ -234,11 +233,9 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
     }
 
     if (_robots) {
-        WaitForSingleObject(p->timerMutex, INFINITE);
-        p->lookupTime += (double)((clock() - t) / CLOCKS_PER_SEC);
+        WaitForSingleObject(p->timer2Mutex, INFINITE);
         p->DNSCount += 1;
-        ReleaseMutex(p->timerMutex);
-        t = clock();
+        ReleaseMutex(p->timer2Mutex);
     }
     
 
@@ -247,11 +244,11 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
         //printf("\t  Chekcing IP uniqueness.. ");
         std::string _ip = inet_ntoa(server.sin_addr);
 
-        WaitForSingleObject(p->queueMutex, INFINITE);
+        WaitForSingleObject(p->list2Mutex, INFINITE);
         int prevSize = _map.size();
         _map.insert(_ip);
         p->uniqueIPCount += 1;
-        ReleaseMutex(p->queueMutex);
+        ReleaseMutex(p->list2Mutex);
 
         if (!(_map.size() > prevSize)) {
             //printf("failed\n");
@@ -266,7 +263,6 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
     else {
         //printf("\t  Connecting on robots... ");
     }
-    t = clock();
 
     server.sin_family = AF_INET;
     server.sin_port = htons(atoi(_url.port.c_str()));
@@ -288,18 +284,14 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
         {
             if (_robots) {
                 WaitForSingleObject(p->timerMutex, INFINITE);
-                p->robotsTime += (double)((clock() - t) / CLOCKS_PER_SEC);
                 p->currentBits += (bytes * 8);
                 ReleaseMutex(p->timerMutex);
-                t = clock();
             }
             else {
                 WaitForSingleObject(p->timerMutex, INFINITE);
-                p->crawlTime += (double)((clock() - t) / CLOCKS_PER_SEC);
                 p->currentBits += (bytes * 8);
                 p->parseBits += (bytes * 8);
                 ReleaseMutex(p->timerMutex);
-                t = clock();
             }
             char* response = newsock.buf;
             closesocket(newsock.sock);
@@ -360,7 +352,6 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                     p->respCodes[4] += 1;
                     ReleaseMutex(p->counterMutex);
                 }
-                clock_t t = clock();
 
                 HTMLParserBase* parser = new HTMLParserBase;
 
@@ -372,7 +363,6 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                     nLinks = 0;
 
                 WaitForSingleObject(p->timerMutex, INFINITE);
-                p->parseTime += (double)((clock() - t) / CLOCKS_PER_SEC);
                 p->linksFound += nLinks;
                 ReleaseMutex(p->timerMutex);
 
@@ -466,12 +456,12 @@ UINT connectionThread(LPVOID _Param) {
         ReleaseMutex(p->counterMutex);
 
         //// check url uniqueness
-        WaitForSingleObject(p->queueMutex, INFINITE);
+        WaitForSingleObject(p->listMutex, INFINITE);
         if (!urlStruct.uniqueCheck(urlStruct.host, p->uniqueURL)) {
             continue;
         }
         p->uniqueHostCount += 1;
-        ReleaseMutex(p->queueMutex);
+        ReleaseMutex(p->listMutex);
 
         if (!urlStruct.connectThreadURL(p, urlStruct, true, '4', true, ROBOT_MAX_SIZE, p->uniqueIP)) {
             continue;
@@ -572,7 +562,9 @@ int main(int argc, char *argv[]) {
         p.queueMutex = CreateMutex(NULL, 0, NULL);
         p.counterMutex = CreateMutex(NULL, 0, NULL);
         p.timerMutex = CreateMutex(NULL, 0, NULL);
-
+        p.timer2Mutex = CreateMutex(NULL, 0, NULL);
+        p.listMutex = CreateMutex(NULL, 0, NULL);
+        p.list2Mutex = CreateMutex(NULL, 0, NULL);
         p.emptyQueueSlots = CreateSemaphore(NULL, 1, 1, NULL);
         p.fullQueueSlots = CreateSemaphore(NULL, 0, maxURLTextSize, NULL);
 

@@ -115,7 +115,7 @@ bool Socket::Read(int maxSize)
                 char* tmp = new char[static_cast<unsigned __int64>(allocatedSize) * 2];
                 memcpy(tmp, buf, allocatedSize);
                 allocatedSize *= 2;
-                delete buf;
+                delete [] buf;
                 buf = tmp;
             }
         }
@@ -124,7 +124,7 @@ bool Socket::Read(int maxSize)
             return false;
         }
         else {
-            std::cout << "hree2";
+            //std::cout << "hree2";
             printf("failed with %d\n", WSAGetLastError());
             
             return false;
@@ -222,7 +222,7 @@ int Socket::threadRead(int maxSize)
             }
 
             // resize if buffer is nto large enough
-            if (allocatedSize - curpos < 1024) {
+            if ((allocatedSize - curpos) < (allocatedSize/2)) {
                 char* tmp = new char[static_cast<unsigned __int64>(allocatedSize) * 2];
                 memcpy(tmp, buf, allocatedSize);
                 allocatedSize *= 2;
