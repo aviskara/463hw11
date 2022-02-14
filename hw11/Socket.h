@@ -8,7 +8,7 @@
 
 #pragma once
 #include "pch.h"
-#include "DecompURL.h"
+
 
 class Socket {
 public:
@@ -19,6 +19,9 @@ public:
 
 	Socket();
 
-	bool Write(DecompURL _url, bool _robots);
+	bool Write(bool _robots, std::string _host, std::string _request);
 	bool Read(int maxSize);
+
+	bool threadWrite(bool _robots, std::string _host, std::string _request);
+	int threadRead(int maxSize);
 };

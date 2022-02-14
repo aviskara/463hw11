@@ -17,6 +17,9 @@
 #include <fstream>
 #include <string.h>
 #include <sstream>
+#include <queue>
+#include <mutex>
+#include <thread>
 #include <unordered_set>
 #include <stdio.h>
 #include <Windows.h>
