@@ -10,6 +10,7 @@
 #include "DecompURL.h"
 #include <iostream>
 #include <fstream>
+#include <fstream>
 //using namespace std;
 
 const int ROBOT_MAX_SIZE = 16 * 1024;
@@ -255,14 +256,14 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
         WaitForSingleObject(p->list2Mutex, INFINITE);
         int prevSize = _map.size();
         _map.insert(_ip);
-        p->uniqueIPCount += 1;
-        ReleaseMutex(p->list2Mutex);
-
+        
         if (!(_map.size() > prevSize)) {
             //printf("failed\n");
             delete[] newsock.buf;
             return false;
         }
+        p->uniqueIPCount += 1;
+        ReleaseMutex(p->list2Mutex);
         //printf("passed\n");
     }
 
@@ -310,6 +311,14 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
             if (strstr(response, ".tamu.edu/") != NULL) {
                 p->tamuCount += 1;
             }
+            if (strstr(response, ".tamu.edu/") != NULL) {
+                p->tamuCount += 1;
+                if (_url.host.size() >= 8) {
+                    if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
+                        p->outside += 1;
+                    }
+                }
+            }
 
             char validResponse[] = "HTTP";
             char headerend[] = "\r\n\r\n";
@@ -338,11 +347,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 if (status[0] == '2') {
                     WaitForSingleObject(p->counterMutex, INFINITE);
                     p->respCodes[0] += 1;
-                    if (_url.host.size() >= 8) {
-                        if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
-                            p->tamuCount += 1;
-                        }
-                    }
+                    
                     
                     ReleaseMutex(p->counterMutex);
                 }
@@ -430,6 +435,8 @@ UINT sig_handler(LPVOID _Param) {
                 currentTime, p->activeThreads, p->pendingQueue, p->extractedURL, p->uniqueHostCount, p->DNSCount,
                 p->uniqueIPCount, p->robotPassCount, p->crawledURLCount, ((int)p->linksFound),
                 (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)), p->tamuCount);
+                (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)));
+            //printf("tamu count: %d %d\n", p->tamuCount, p->outside);
             prev_t = t;
             //WaitForSingleObject(p->timerMutex, INFINITE);
             p->previousCrawl = p->crawledURLCount;
@@ -635,12 +642,30 @@ int main(int argc, char *argv[]) {
         //printf("HTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n",
             //p.respCodes[0], p.respCodes[1], p.respCodes[2], p.respCodes[3], p.respCodes[4]);
         printf("tamu count: %d\n", p.tamuCount);
+        printf("\nExtracted %d URLs @ %d/s\n", p.extractedURL, p.extractedURL/endtime);
+        printf("Looked up %d DNS names @ %d/s\n", p.DNSCount, p.DNSCount/endtime);
+        printf("Attempted %d robots @ %d/s\n", p.uniqueIPCount, p.uniqueIPCount/endtime);
+        printf("Crawled %d pages @ %d/s (%.2f MB)\n", p.crawledURLCount, p.crawledURLCount/endtime, ((double)p.parseBits/(8* 1024 * 1024)));
+        printf("Parsed %d links @ %d/s\n", p.crawledURLCount, p.crawledURLCount/endtime);
+        printf("HTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n",
+            p.respCodes[0], p.respCodes[1], p.respCodes[2], p.respCodes[3], p.respCodes[4]);
+        printf("tamu count: %d %d\n", p.tamuCount, p.outside);
         /*while (!p.sharedQueue.empty()) {
             std::cout << p.sharedQueue.front() << " ";
             p.sharedQueue.pop();
         }
         printf("done in %.0f ms with %d bytes\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC);*/
-        
+        std::ofstream ofs;
+        ofs.open("output.txt");
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.extractedURL << p.extractedURL / endtime;
+        ofs << "\nLooked up %d DNS names @ %d/s\n" << p.DNSCount << p.DNSCount / endtime / endtime;
+        ofs << "\nAttempted %d robots @ %d/s\n" << p.uniqueIPCount << p.uniqueIPCount / endtime / endtime;
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.crawledURLCount << p.crawledURLCount / endtime << ((double)p.parseBits / (8 * 1024 * 1024));
+        ofs << "\nParsed %d links @ %d/s\n" << p.crawledURLCount << p.extractedURL / endtime;
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.extractedURL << p.crawledURLCount / endtime;
+        ofs << "\nHTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n" << p.respCodes[0] << p.respCodes[1] << p.respCodes[2] << p.respCodes[3] << p.respCodes[4];
+        ofs << "\ntamu count : % d % d\n" << p.tamuCount << p.outside;
+        ofs.close();
 
     }
     else {
