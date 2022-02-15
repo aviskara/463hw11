@@ -8,6 +8,8 @@
 
 #include "pch.h"
 #include "DecompURL.h"
+#include <iostream>
+#include <fstream>
 //using namespace std;
 
 const int ROBOT_MAX_SIZE = 16 * 1024;
@@ -28,6 +30,7 @@ struct Parameters {
     HANDLE fullQueueSlots;
 
     std::queue<std::string> sharedQueue;
+    std::queue<std::string> tamuQueue;
 
     std::unordered_set<std::string> uniqueURL;
     std::unordered_set<std::string> uniqueIP;
@@ -61,6 +64,7 @@ struct Parameters {
 
     // tamu link count.
     volatile int tamuCount = 0;
+    volatile int outside = 0;
 };
 
 bool DecompURL::fillThreadURL(LPVOID _param, std::string _url)
@@ -178,6 +182,8 @@ bool DecompURL::fillThreadURL(LPVOID _param, std::string _url)
     port = charport;
     path = charpath;
     request = path + query;
+
+    
 
 
     return true;
@@ -300,6 +306,10 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
             char* response = newsock.buf;
             //closesocket(newsock.sock);
             
+            // find if there are links going to tamu
+            if (strstr(response, ".tamu.edu/") != NULL) {
+                p->tamuCount += 1;
+            }
 
             char validResponse[] = "HTTP";
             char headerend[] = "\r\n\r\n";
@@ -416,10 +426,10 @@ UINT sig_handler(LPVOID _Param) {
         elapsedTime = (int)((t - prev_t) / CLOCKS_PER_SEC);
         if (elapsedTime >= 2) {
             currentTime += elapsedTime;
-            printf("[%3d] %5d Q %6d E %7d H %6d D %6d I %5d R %5d C %5d L %4dK\n\t*** crawling %.1f pps @ %.1f Mbps\n",
+            printf("[%3d] %5d Q %6d E %7d H %6d D %6d I %5d R %5d C %5d L %4dK\n\t*** crawling %.1f pps @ %.1f Mbps %d\n",
                 currentTime, p->activeThreads, p->pendingQueue, p->extractedURL, p->uniqueHostCount, p->DNSCount,
                 p->uniqueIPCount, p->robotPassCount, p->crawledURLCount, ((int)p->linksFound),
-                (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)));
+                (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)), p->tamuCount);
             prev_t = t;
             //WaitForSingleObject(p->timerMutex, INFINITE);
             p->previousCrawl = p->crawledURLCount;
@@ -460,6 +470,7 @@ UINT connectionThread(LPVOID _Param) {
         p->pendingQueue -= 1;
         ReleaseMutex(p->counterMutex);
 
+        
         //// check url uniqueness
         WaitForSingleObject(p->listMutex, INFINITE);
         if (!urlStruct.uniqueCheck(urlStruct.host, p->uniqueURL)) {
@@ -482,7 +493,7 @@ UINT connectionThread(LPVOID _Param) {
         p->crawledURLCount += 1;
         ReleaseMutex(p->counterMutex);
 
-
+        
 
     }
     WaitForSingleObject(p->counterMutex, INFINITE);
@@ -603,16 +614,26 @@ int main(int argc, char *argv[]) {
         }
 
         CloseHandle(printer);
+
+        std::ofstream ofs;
+        ofs.open("output.txt");
+        std::string temp = "";
+        while (!p.tamuQueue.empty()) {
+            temp = p.tamuQueue.front() + "\n";
+            ofs << temp;
+            p.tamuQueue.pop();
+        }
+        ofs.close();
         
         int endtime = (((double)clock() - t) / CLOCKS_PER_SEC);
 
-        printf("\nExtracted %d URLs @ %d/s\n", p.extractedURL, p.extractedURL/endtime);
-        printf("Looked up %d DNS names @ %d/s\n", p.DNSCount, p.DNSCount/endtime);
-        printf("Attempted %d robots @ %d/s\n", p.uniqueIPCount, p.uniqueIPCount/endtime);
-        printf("Crawled %d pages @ %d/s (%.2f MB)\n", p.crawledURLCount, p.crawledURLCount/endtime, ((double)p.parseBits/(8* 1024 * 1024)));
-        printf("Parsed %d links @ %d/s\n", p.crawledURLCount, p.crawledURLCount/endtime);
-        printf("HTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n",
-            p.respCodes[0], p.respCodes[1], p.respCodes[2], p.respCodes[3], p.respCodes[4]);
+        //printf("\nExtracted %d URLs @ %d/s\n", p.extractedURL, p.extractedURL/endtime);
+        //printf("Looked up %d DNS names @ %d/s\n", p.DNSCount, p.DNSCount/endtime);
+        //printf("Attempted %d robots @ %d/s\n", p.uniqueIPCount, p.uniqueIPCount/endtime);
+        //printf("Crawled %d pages @ %d/s (%.2f MB)\n", p.crawledURLCount, p.crawledURLCount/endtime, ((double)p.parseBits/(8* 1024 * 1024)));
+        //printf("Parsed %d links @ %d/s\n", p.crawledURLCount, p.crawledURLCount/endtime);
+        //printf("HTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n",
+            //p.respCodes[0], p.respCodes[1], p.respCodes[2], p.respCodes[3], p.respCodes[4]);
         printf("tamu count: %d\n", p.tamuCount);
         /*while (!p.sharedQueue.empty()) {
             std::cout << p.sharedQueue.front() << " ";
@@ -631,5 +652,5 @@ int main(int argc, char *argv[]) {
     
     return 0;
     
-}
+} 
 
