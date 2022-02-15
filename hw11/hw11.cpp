@@ -8,6 +8,7 @@
 
 #include "pch.h"
 #include "DecompURL.h"
+#include <fstream>
 //using namespace std;
 
 const int ROBOT_MAX_SIZE = 16 * 1024;
@@ -625,7 +626,17 @@ int main(int argc, char *argv[]) {
             p.sharedQueue.pop();
         }
         printf("done in %.0f ms with %d bytes\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC);*/
-        
+        std::ofstream ofs;
+        ofs.open("output.txt");
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.extractedURL << p.extractedURL / endtime;
+        ofs << "\nLooked up %d DNS names @ %d/s\n" << p.DNSCount << p.DNSCount / endtime / endtime;
+        ofs << "\nAttempted %d robots @ %d/s\n" << p.uniqueIPCount << p.uniqueIPCount / endtime / endtime;
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.crawledURLCount << p.crawledURLCount / endtime << ((double)p.parseBits / (8 * 1024 * 1024));
+        ofs << "\nParsed %d links @ %d/s\n" << p.crawledURLCount << p.extractedURL / endtime;
+        ofs << "\nExtracted % d URLs @ % d / s\n" << p.extractedURL << p.crawledURLCount / endtime;
+        ofs << "\nHTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n" << p.respCodes[0] << p.respCodes[1] << p.respCodes[2] << p.respCodes[3] << p.respCodes[4];
+        ofs << "\ntamu count : % d % d\n" << p.tamuCount << p.outside;
+        ofs.close();
 
     }
     else {
