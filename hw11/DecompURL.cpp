@@ -5,7 +5,7 @@
 * Section: 500
 * Semister Spring 22
 */
-
+#pragma warning(disable : 4996)
 #include "pch.h"
 #include "DecompURL.h"
 #include "Socket.h"
@@ -224,11 +224,14 @@ bool DecompURL::connectURL(DecompURL _url, bool _robots, char statusChar, bool _
     {
         if (newsock.Read(_maxSize)) 
         {   
+
             char* response = newsock.buf;
             closesocket(newsock.sock);
 
             char validResponse[] = "HTTP";
             char headerend[] = "\r\n\r\n";
+
+            //std::cout << response << std::endl;
 
             // get to the status and verify
             printf("\t  Verifying header... ");
@@ -250,6 +253,39 @@ bool DecompURL::connectURL(DecompURL _url, bool _robots, char statusChar, bool _
                 return false;
             }
             if(!_robots){
+
+                //check if respose has chucked
+                int cursor2 = 0;
+                int totalSize = 0;
+                long hexInt = 0;
+                std::string newResponse = response;
+                std::string hexString = "";
+                cursor2 = newResponse.find("\r\n\r\n");
+                if (cursor2 > -1) {
+                    printf("\t  Dechunking... ", status);
+
+                    newResponse = newResponse.substr((cursor2+4), -1);
+
+                    cursor2 = newResponse.find("\r\n");
+                    hexString = newResponse.substr(0, cursor2+2);
+                    hexInt = strtol(hexString.c_str(), NULL, 16);
+                    newResponse = newResponse.substr(4, -1);
+                    totalSize += hexInt+2;
+
+                    
+                    while (hexInt != 0) {
+                        hexString = newResponse.substr(totalSize, 2);
+                        hexInt = strtol(hexString.c_str(), NULL, 16);
+                        newResponse = newResponse.erase(totalSize, 4);
+                        totalSize += hexInt + 2;
+                    }
+                    // erase last 0
+                    newResponse = newResponse.substr(0, totalSize - 4);
+
+                    cursor = strstr(response, headerend);
+                    cursor += 4;
+                    printf("body size was %d, now %d\n", strlen(cursor), strlen(newResponse.c_str()));
+                }
                 printf("\t+ Parsing page... ");
                 clock_t t = clock();
 
@@ -269,11 +305,11 @@ bool DecompURL::connectURL(DecompURL _url, bool _robots, char statusChar, bool _
             if (cursor)
                 *cursor = '\0';
             
-            /*
+            
             if (!_robots) {
                 printf("\n------------------------------------------\n%s\n\n", response);
             }
-            */
+            
         }
         else
         {

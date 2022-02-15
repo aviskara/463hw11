@@ -22,6 +22,7 @@
 #include <thread>
 #include <unordered_set>
 #include <stdio.h>
+#include <shlwapi.h>
 #include <Windows.h>
 
 #include "HTMLParserBase.h"

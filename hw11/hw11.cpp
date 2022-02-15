@@ -294,7 +294,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 ReleaseMutex(p->timerMutex);
             }
             char* response = newsock.buf;
-            closesocket(newsock.sock);
+            //closesocket(newsock.sock);
             
 
             char validResponse[] = "HTTP";
@@ -365,7 +365,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 WaitForSingleObject(p->timerMutex, INFINITE);
                 p->linksFound += nLinks;
                 ReleaseMutex(p->timerMutex);
-
+                
                 //printf("done in %.0f ms with  %d links\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC, nLinks);
             }
 
@@ -537,9 +537,10 @@ int main(int argc, char *argv[]) {
 
     if (argc == 2) {
         newurl = argv[1];
+        std::unordered_set<std::string> uniqueIP;
         DecompURL newnew;
         newnew.fillURL(newurl);
-        //newnew.connectURL(newnew, true, '2', true, PAGE_MAX_SIZE, uniqueIP);
+        newnew.connectURL(newnew, false, '2', true, PAGE_MAX_SIZE, uniqueIP);
     }
 
     else if (argc == 3) {

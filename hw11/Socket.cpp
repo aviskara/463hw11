@@ -33,7 +33,7 @@ bool Socket::Write(bool _robots, std::string _host, std::string _request)
         req = "HEAD /robots.txt HTTP/1.0 \r\nUser-agent: hwCrawler/1.2\r\nHost: " + _host + "\r\nConnection: close\r\n\r\n";
     }
     else {
-         req = "GET " + _request + " HTTP/1.0 \r\nUser-agent: hwCrawler/1.2\r\nHost: " + _host + "\r\nConnection: close\r\n\r\n";
+         req = "GET " + _request + " HTTP/1.1 \r\nUser-agent: hwCrawler/1.2\r\nHost: " + _host + "\r\nConnection: close\r\n\r\n";
     }
     //char* tmp = req.c_str();
 
@@ -92,14 +92,14 @@ bool Socket::Read(int maxSize)
                 buf[curpos + 1] = '\0'; 
                 printf("done in %.0f ms with %d bytes\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC, curpos);
 
-                // resize if buffer is greater than 32kb
-                if (allocatedSize > (32 * 1024)) {
-                    char* tmp = new char[4096];
-                    allocatedSize = 4096;
-                    delete buf;
-                    buf = tmp;
-                    
-                }
+                //// resize if buffer is greater than 32kb
+                //if (allocatedSize > (32 * 1024)) {
+                //    char* tmp = new char[4096];
+                //    allocatedSize = 4096;
+                //    delete buf;
+                //    buf = tmp;
+                //    
+                //}
                 return true;
             }
             curpos += bytes;
@@ -111,7 +111,7 @@ bool Socket::Read(int maxSize)
             }
 
             // resize if buffer is nto large enough
-            if (allocatedSize - curpos < 1024) {
+            if ((allocatedSize - curpos) < (allocatedSize/2)) {
                 char* tmp = new char[static_cast<unsigned __int64>(allocatedSize) * 2];
                 memcpy(tmp, buf, allocatedSize);
                 allocatedSize *= 2;

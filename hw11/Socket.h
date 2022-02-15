@@ -17,6 +17,8 @@ public:
 	int allocatedSize;
 	int curpos;
 
+
+
 	Socket();
 
 	~Socket();
