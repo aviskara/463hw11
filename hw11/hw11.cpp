@@ -61,6 +61,7 @@ struct Parameters {
 
     // tamu link count.
     volatile int tamuCount = 0;
+    volatile int outside = 0;
 };
 
 bool DecompURL::fillThreadURL(LPVOID _param, std::string _url)
@@ -249,14 +250,14 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
         WaitForSingleObject(p->list2Mutex, INFINITE);
         int prevSize = _map.size();
         _map.insert(_ip);
-        p->uniqueIPCount += 1;
-        ReleaseMutex(p->list2Mutex);
-
+        
         if (!(_map.size() > prevSize)) {
             //printf("failed\n");
             delete[] newsock.buf;
             return false;
         }
+        p->uniqueIPCount += 1;
+        ReleaseMutex(p->list2Mutex);
         //printf("passed\n");
     }
 
@@ -300,6 +301,14 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
             char* response = newsock.buf;
             //closesocket(newsock.sock);
             
+            if (strstr(response, ".tamu.edu/") != NULL) {
+                p->tamuCount += 1;
+                if (_url.host.size() >= 8) {
+                    if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
+                        p->outside += 1;
+                    }
+                }
+            }
 
             char validResponse[] = "HTTP";
             char headerend[] = "\r\n\r\n";
@@ -328,11 +337,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 if (status[0] == '2') {
                     WaitForSingleObject(p->counterMutex, INFINITE);
                     p->respCodes[0] += 1;
-                    if (_url.host.size() >= 8) {
-                        if (_url.host.substr(_url.host.size() - 8) == "tamu.edu") {
-                            p->tamuCount += 1;
-                        }
-                    }
+                    
                     
                     ReleaseMutex(p->counterMutex);
                 }
@@ -420,6 +425,7 @@ UINT sig_handler(LPVOID _Param) {
                 currentTime, p->activeThreads, p->pendingQueue, p->extractedURL, p->uniqueHostCount, p->DNSCount,
                 p->uniqueIPCount, p->robotPassCount, p->crawledURLCount, ((int)p->linksFound),
                 (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)));
+            //printf("tamu count: %d %d\n", p->tamuCount, p->outside);
             prev_t = t;
             //WaitForSingleObject(p->timerMutex, INFINITE);
             p->previousCrawl = p->crawledURLCount;
@@ -613,7 +619,7 @@ int main(int argc, char *argv[]) {
         printf("Parsed %d links @ %d/s\n", p.crawledURLCount, p.crawledURLCount/endtime);
         printf("HTTP codes: 2xx = %d, 3xx = %d, 4xx = %d, 5xx = %d, other = %d\n",
             p.respCodes[0], p.respCodes[1], p.respCodes[2], p.respCodes[3], p.respCodes[4]);
-        printf("tamu count: %d\n", p.tamuCount);
+        printf("tamu count: %d %d\n", p.tamuCount, p.outside);
         /*while (!p.sharedQueue.empty()) {
             std::cout << p.sharedQueue.front() << " ";
             p.sharedQueue.pop();
