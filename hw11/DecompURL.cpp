@@ -21,9 +21,7 @@ DecompURL::DecompURL()
     hostip = "";
 }
 
-DecompURL::~DecompURL()
-{
-}
+
 
 int DecompURL::fillURL(std::string _url) 
 {
@@ -309,6 +307,7 @@ bool DecompURL::connectURL(DecompURL _url, bool _robots, char statusChar, bool _
             if (!_robots) {
                 printf("\n------------------------------------------\n%s\n\n", response);
             }
+            return true;
             
         }
         else

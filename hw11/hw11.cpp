@@ -42,7 +42,7 @@ struct Parameters {
     volatile int uniqueIPCount = 0;
     volatile int robotPassCount = 0;
     volatile int crawledURLCount = 0;
-    volatile int linksFound = 0;
+    volatile double linksFound = 0;
     volatile int activeThreads = 0;
     volatile int previousCrawl = 0;
     volatile size_t currentBits = 0;
@@ -196,14 +196,15 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
     WORD wVersionRequested = MAKEWORD(2, 2);
     if (WSAStartup(wVersionRequested, &wsaData) != 0) {
         //printf("WSAStartop error %d\n", WSAGetLastError());
-        WSACleanup();
+        //WSACleanup();
         return false;
     }
 
     Socket newsock;
     if (newsock.sock == INVALID_SOCKET) {
         //printf("socket() generated error %d\n", WSAGetLastError());
-        WSACleanup();
+        //WSACleanup();
+        delete[] newsock.buf;
         return false;
     }
 
@@ -217,6 +218,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
         if ((remote = gethostbyname(_url.host.c_str())) == NULL)
         {
             //printf("failed with %d\n", WSAGetLastError());
+            delete[] newsock.buf;
             return false;
         }
         else
@@ -252,6 +254,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
 
         if (!(_map.size() > prevSize)) {
             //printf("failed\n");
+            delete[] newsock.buf;
             return false;
         }
         //printf("passed\n");
@@ -269,6 +272,7 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
 
     if (connect(newsock.sock, (struct sockaddr*)&server, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
         //printf("failed with: %d\n", WSAGetLastError());
+        delete[] newsock.buf;
         return false;
     }
 
@@ -361,9 +365,9 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 delete parser;
                 if (nLinks < 0)
                     nLinks = 0;
-
+                double temp = nLinks;
                 WaitForSingleObject(p->timerMutex, INFINITE);
-                p->linksFound += nLinks;
+                p->linksFound += (temp/1000);
                 ReleaseMutex(p->timerMutex);
                 
                 //printf("done in %.0f ms with  %d links\n", (1000) * ((double)clock() - t) / CLOCKS_PER_SEC, nLinks);
@@ -380,21 +384,22 @@ bool DecompURL::connectThreadURL(LPVOID _Param, DecompURL _url, bool _robots, ch
                 printf("\n------------------------------------------\n%s\n\n", response);
             }
             */
+            closesocket(newsock.sock);
             return true;
         }
         else
         {
             delete[] newsock.buf;
-            return false;
+            //std::cout << "1";
         }
     }
     else
     {   
         delete[] newsock.buf;
-        return false;
+        //std::cout << "2";
     }
     closesocket(newsock.sock);
-    return true;
+    return false;
 }
 
 UINT sig_handler(LPVOID _Param) {
@@ -413,7 +418,7 @@ UINT sig_handler(LPVOID _Param) {
             currentTime += elapsedTime;
             printf("[%3d] %5d Q %6d E %7d H %6d D %6d I %5d R %5d C %5d L %4dK\n\t*** crawling %.1f pps @ %.1f Mbps\n",
                 currentTime, p->activeThreads, p->pendingQueue, p->extractedURL, p->uniqueHostCount, p->DNSCount,
-                p->uniqueIPCount, p->robotPassCount, p->crawledURLCount, (p->linksFound/1000),
+                p->uniqueIPCount, p->robotPassCount, p->crawledURLCount, ((int)p->linksFound),
                 (((double)p->crawledURLCount-(double)p->previousCrawl)/2), ((p->currentBits - p->pasBits) / (2*megabit)));
             prev_t = t;
             //WaitForSingleObject(p->timerMutex, INFINITE);

@@ -28,7 +28,7 @@ public:
 	struct sockaddr_in _server;
 
 	DecompURL();
-	~DecompURL();
+	//~DecompURL();
 
 	int fillURL(std::string _url);
 	bool connectURL(DecompURL _url, bool printHeader, char statusChar, bool _printText, int maxSize, std::unordered_set<std::string> &_map);

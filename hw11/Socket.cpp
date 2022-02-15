@@ -65,7 +65,7 @@ bool Socket::Read(int maxSize)
 
     clock_t t = clock();
 
-
+    
     while (true)
     {
         // initialize fd
@@ -188,12 +188,14 @@ int Socket::threadRead(int maxSize)
             // if download takes longer than 10 seconds
             if ((((double)clock() - t) / CLOCKS_PER_SEC) > 10) {
                 //printf("failed with slow download\n");
-                return false;
+                //std::cout << "1";
+                return -1;
             }
 
             if (bytes < 0) {
                 //printf("failed with %d\n", WSAGetLastError());
-                return false;
+                //std::cout << "2";
+                return -1;
             }
             // return as all info is sent
             if (bytes == 0) {
@@ -209,16 +211,13 @@ int Socket::threadRead(int maxSize)
             // return if reading more than supposed to
             if (curpos > maxSize) {
                 //printf("failed with exceeding max\n");
-                return false;
+                //std::cout << "3";
+                return -1;
             }
 
             // resize if buffer is greater than 32kb
-            if (allocatedSize > (32 * 1024)) {
-                /*char* tmp = new char[4096];
-                allocatedSize = 4096;
-                delete[] buf;
-                buf = tmp;*/
-                return false;
+            if (allocatedSize > (2 * 1024 * 1024)) {
+                return -1;
             }
 
             // resize if buffer is nto large enough
@@ -232,14 +231,16 @@ int Socket::threadRead(int maxSize)
         }
         else if (ret == 0) {
             //printf("failed with timeout\n");
-            return false;
+            //std::cout << "5";
+            return -1;
         }
         else {
             //std::cout << "hree2";
             //printf("failed with %d\n", WSAGetLastError());
-
-            return false;
+            //std::cout << "6";
+            return -1;
         }
     }
+    //std::cout << "7";
     return false;
 }
